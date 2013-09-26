@@ -1,0 +1,27 @@
+{
+  "name": "node-temperature-monitor",
+  "version": "0.0.1",
+  "description": "Monitor the temperature using a GPIO temperature probe, display it on a i2c LED display, log it in a SQLite database, serve up webpages showing the log on a chart.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/euoia/node-temperature-monitor"
+  },
+  "keywords": [
+    "nodejs",
+    "i2c",
+    "LED",
+    "display",
+    "SQLite",
+    "GPIO",
+    "temperature",
+    "temperature",
+    "monitor",
+    "brewing"
+  ],
+  "author": "James Pickard",
+  "license": "BSD"
+}
