@@ -4,7 +4,7 @@ var temp = require('node-rasp2c-temp/temp'),
 	db = require('./db.js');
 
 // Log interval in milliseconds.
-var logIntervalMilliseconds = 30 * 1000;
+var logIntervalMilliseconds = 5 * 1000;
 
 var app = express();
 app.configure(function () {
@@ -21,16 +21,21 @@ app.configure(function () {
 });
 
 // Repeatedly call the logging function.
-setInterval(function () {
+setInterval(function logTemperature() {
 	"use strict";
 
+	console.log('Inserting last good temperature reading into database.');
+
 	var celsius = temp.getLastGoodTemp();
+	if (celsius === null) {
+		console.error('Even the last good temp was bad! Not inserting anything.');
+		return;
+	}
+
 	var record = {
 		unix_time: Date.now(),
 		celsius: celsius
 	};
-
-	console.log('Inserting last good temperature reading into database.');
 
 	db.insertTemp(record, function (error) {
 		if (error) {

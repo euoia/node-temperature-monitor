@@ -30,13 +30,8 @@ var selectTemp = exports.selectTemp = function (num_records, start_date, callbac
 };
 
 // Write a single temperature record in JSON format to database table.
-var insertTemp = exports.insertTemp = function (error, tempRecord) {
+var insertTemp = exports.insertTemp = function (tempRecord, callback) {
 	"use strict";
-
-	if (error) {
-		console.log('Not logging temperature, error was: ' + error);
-		return;
-	}
 
 	console.log("Inserting temperature " + tempRecord.celsius + " at " + tempRecord.unix_time);
 
@@ -47,5 +42,5 @@ var insertTemp = exports.insertTemp = function (error, tempRecord) {
 	statement.run(tempRecord.unix_time, tempRecord.celsius);
 
 	// Execute the statement.
-	statement.finalize();
+	statement.finalize(callback);
 }
