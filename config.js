@@ -2,7 +2,7 @@
 const fs = require('fs-sync');
 
 if (fs.exists('.env') === false) {
-  /* eslint no-console: false */
+  /* eslint no-console: 0 */
   console.log('> cp .env.example .env');
   fs.copy('.env.example', '.env');
 }
