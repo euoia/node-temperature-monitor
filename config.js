@@ -23,7 +23,8 @@ module.exports = {
     loggly_token: process.env.LOG_LOGGLY_TOKEN,
     loggly_subdomain: process.env.LOG_LOGGLY_SUBDOMAIN
   },
-  sensors: {
-    device1: process.env.SENSORS_DEVICE1
+  device1: {
+    path: process.env.DEVICE1_PATH,
+    location: process.env.DEVICE1_LOCATION
   }
 }

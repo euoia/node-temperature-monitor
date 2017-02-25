@@ -4,18 +4,14 @@ const config = require('./config.js');
 const temperatureSensor = require('rasp2c/temperature');
 const temperatureDisplay = require('led-backpack/temperature');
 
-// TODO: Turn this into a configurable map between the sensor ID and the
-// location string.
-const location = 'office';
-
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
 let lastGoodTemperature = temperatureSensor.getLastGoodTemperature();
 
 // Repeatedly call the logging function.
 const logTemperature = () => {
-  temperatureSensor.readTemperature(config.sensors.device1)
+  temperatureSensor.readTemperature(config.device1.path)
     .then(celsius => {
-      log.debug(`Read temperature of ${celsius}°C from ${config.sensors.device1}.`);
+      log.debug(`Read temperature of ${celsius}°C from ${config.device1.path}.`);
 
       // If reading is very different from the last "good" temperature from the
       // sensor, then ignore it.
@@ -30,9 +26,9 @@ const logTemperature = () => {
       lastGoodTemperature = celsius;
       temperatureDisplay.displayTemperature(celsius);
 
-      db.insertTemperature(celsius, location)
+      db.insertTemperature(celsius, config.device1.location)
         .then(() => {
-          log.info(`Recorded ${celsius}°C for ${location}.`);
+          log.info(`Recorded ${celsius}°C for ${config.device1.location}.`);
         })
         .catch(err => {
           log.error(`Error inserting record: ${err} ${err.stack}`);
