@@ -4,11 +4,13 @@
   "description": "Monitor the temperature using a GPIO temperature probe, display it on a i2c LED display, log it in a SQLite database, serve up webpages showing the log on a chart.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Nothing to build.\"",
+    "deploy": "./scripts/deploy"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/euoia/node-temperature-monitor"
+    "url": "https://github.com/euoia/temperature-monitor"
   },
   "keywords": [
     "nodejs",
@@ -23,11 +25,13 @@
     "brewing"
   ],
   "author": "James Pickard",
-  "license": "BSD",
+  "license": "ISC",
   "dependencies": {
-    "node-rasp2c-temp": "git://github.com/euoia/node-rasp2c-temp#master",
     "dotenv": "^2.0.0",
-    "fs-sync": "^1.0.2"
+    "fs-sync": "^1.0.2",
+    "influx": "^5.0.0-alpha.4",
+    "node-rasp2c-temp": "git://github.com/euoia/node-led-backpack#master",
+    "winston": "^2.3.1"
   },
   "devDependencies": {
     "eslint": "^3.15.0"
