@@ -32,7 +32,8 @@
     "influx": "^5.0.0-alpha.4",
     "node-rasp2c-temp": "git://github.com/euoia/node-led-backpack#master",
     "winston": "^2.3.1",
-    "winston-loggly-bulk": "^1.4.0"
+    "winston-loggly-bulk": "^1.4.0",
+    "rasp2c": "git://github.com/euoia/node-rasp2c"
   },
   "devDependencies": {
     "eslint": "^3.15.0"

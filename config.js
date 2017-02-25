@@ -22,5 +22,8 @@ module.exports = {
     level: process.env.LOG_LEVEL,
     loggly_token: process.env.LOG_LOGGLY_TOKEN,
     loggly_subdomain: process.env.LOG_LOGGLY_SUBDOMAIN
+  },
+  sensors: {
+    device1: process.env.SENSORS_DEVICE1
   }
 }

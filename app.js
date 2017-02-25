@@ -1,48 +1,52 @@
-const temperature = require('led-backpack/temperature');
 const db = require('./db.js');
 const log = require('./log.js');
 const config = require('./config.js');
+const temperatureSensor = require('rasp2c/temperature');
+const temperatureDisplay = require('led-backpack/temperature');
 
 // TODO: Turn this into a configurable map between the sensor ID and the
 // location string.
 const location = 'office';
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
-let lastGoodTemperature = temperature.getLastGoodTemperature();
+let lastGoodTemperature = temperatureSensor.getLastGoodTemperature();
 
 // Repeatedly call the logging function.
 const logTemperature = () => {
-  const celsius = temperature.getLastGoodTemperature();
-  if (celsius === null) {
-    log.error('Unable to get a good temperature reading.');
-    return;
-  }
+  temperatureSensor.readTemperature(config.sensors.device1)
+    .then(celsius => {
+      log.debug(`Read temperature of ${celsius}°C from ${config.sensors.device1}.`);
 
-  // If reading is very different from the last "good" temperature from the sensor, then ignore it.
-  // TODO: Implement this properly:
-  //  * A very different reading from the last one should be ignored.
-  //  * Make the range configurable.
-  //  * If the temperature ever jumps by more than +10 or -10 in one reading,
-  //    this version will break because all subsequent readings will be
-  //    discarded.
-  if (lastGoodTemperature !== null && (celsius > lastGoodTemperature + 15 || celsius < lastGoodTemperature - 15)) {
-    log.error('Probably a weird reading (' + celsius + 'C) - very different from the last good one (' + lastGoodTemperature + 'C), ignoring.');
-    return;
-  }
+      // If reading is very different from the last "good" temperature from the
+      // sensor, then ignore it.
+      if (lastGoodTemperature !== null && Math.abs(celsius - lastGoodTemperature) > 15) {
+        log.error(
+          `Got a weird reading (${celsius}°C is very different from the ` +
+          `last good reading ${lastGoodTemperature}°C) - ignoring.`
+        );
+        return;
+      }
 
-  lastGoodTemperature = celsius;
+      lastGoodTemperature = celsius;
+      temperatureDisplay.displayTemperature(celsius);
 
-  db.insertTemperature(celsius, location)
-    .then(() => {
-      log.info(`Recorded ${celsius}°C for ${location}.`);
+      db.insertTemperature(celsius, location)
+        .then(() => {
+          log.info(`Recorded ${celsius}°C for ${location}.`);
+        })
+        .catch(err => {
+          log.error(`Error inserting record: ${err} ${err.stack}`);
+        });
     })
     .catch(err => {
-      log.error(`Error inserting record: ${err} ${err.stack}`);
+      log.error('Unable to get a good temperature reading.')
+      log.error(err.stack);
+      return;
     });
 };
 
 log.info(`Server is logging to database ${config.database.name} every ${config.logIntervalMilliseconds}ms.`);
 
-temperature.init();
+temperatureDisplay.init();
 logTemperature();
 setInterval(logTemperature, config.logIntervalMilliseconds);
