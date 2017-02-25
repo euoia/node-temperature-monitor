@@ -1,20 +1,20 @@
-const temp = require('node-rasp2c-temp/temp');
+const temperature = require('led-backpack/temperature');
 const db = require('./db.js');
 const log = require('./log.js');
+const config = require('./config.js');
 
-// Log interval in milliseconds.
-const logIntervalMilliseconds = 30 * 1000;
+// TODO: Turn this into a configurable map between the sensor ID and the
+// location string.
+const location = 'office';
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
-let lastGoodTemp = null;
+let lastGoodTemperature = temperature.getLastGoodTemperature();
 
 // Repeatedly call the logging function.
-setInterval(function logTemperature() {
-  log.info('Inserting last good temperature reading into database.');
-
-  const celsius = temp.getLastGoodTemp();
+const logTemperature = () => {
+  const celsius = temperature.getLastGoodTemperature();
   if (celsius === null) {
-    log.error('Even the last good temp was bad! Not inserting anything.');
+    log.error('Unable to get a good temperature reading.');
     return;
   }
 
@@ -25,25 +25,24 @@ setInterval(function logTemperature() {
   //  * If the temperature ever jumps by more than +10 or -10 in one reading,
   //    this version will break because all subsequent readings will be
   //    discarded.
-  if (lastGoodTemp !== null && (celsius > lastGoodTemp + 15 || celsius < lastGoodTemp - 15)) {
-    log.error('Probably a weird reading (' + celsius + 'C) - very different from the last good one (' + lastGoodTemp + 'C), ignoring.');
+  if (lastGoodTemperature !== null && (celsius > lastGoodTemperature + 15 || celsius < lastGoodTemperature - 15)) {
+    log.error('Probably a weird reading (' + celsius + 'C) - very different from the last good one (' + lastGoodTemperature + 'C), ignoring.');
     return;
   }
 
-  lastGoodTemp = celsius;
+  lastGoodTemperature = celsius;
 
-  const record = {
-    unix_time: Date.now(),
-    celsius: celsius
-  };
+  db.insertTemperature(celsius, location)
+    .then(() => {
+      log.info(`Recorded ${celsius}°C for ${location}.`);
+    })
+    .catch(err => {
+      log.error(`Error inserting record: ${err} ${err.stack}`);
+    });
+};
 
-  db.insertTemp(record, function (error) {
-    if (error) {
-      log.error('Error inserting into database.');
-      log.error(error);
-    }
-  });
+log.info(`Server is logging to database ${config.database.name} every ${config.logIntervalMilliseconds}ms.`);
 
-}, logIntervalMilliseconds);
-
-log.info('Server is logging to database at ' + logIntervalMilliseconds + 'ms intervals');
+temperature.init();
+logTemperature();
+setInterval(logTemperature, config.logIntervalMilliseconds);

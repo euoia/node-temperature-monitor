@@ -2,11 +2,13 @@
 const config = require('./config.js');
 const winston = require('winston');
 
+require('winston-loggly-bulk');
+
 function zeroPad(num, len) {
   return ('0'.repeat(len) + num.toString()).slice(0 - len);
 }
 
-module.exports = new (winston.Logger)({
+const logger = new (winston.Logger)({
   level: config.log.level,
   transports: [
     new (winston.transports.Console)({
@@ -32,3 +34,14 @@ module.exports = new (winston.Logger)({
     })
   ]
 });
+
+const logglyConfig = {
+    inputToken: config.log.loggly_token,
+    subdomain: config.log.loggly_subdomain,
+    tags: ["Winston-NodeJS"],
+    json:true
+};
+
+logger.add(winston.transports.Loggly, logglyConfig);
+
+module.exports = logger;
