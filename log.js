@@ -43,5 +43,6 @@ const logglyConfig = {
 };
 
 logger.add(winston.transports.Loggly, logglyConfig);
+logger.add(winston.transports.File, {filename: config.log.dir + `/temperature-monitor.log`});
 
 module.exports = logger;
