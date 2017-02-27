@@ -1,8 +1,8 @@
 'use strict';
 const _ = require('lodash');
 
-const dotenv = require('dotenv');
-dotenv.config();
+// Load environment variables with the -r option, e.g.
+// node -r dotenv/config app.js
 
 module.exports = {
   logIntervalMilliseconds: process.env.LOG_INTERVAL_MS,
@@ -14,6 +14,7 @@ module.exports = {
   },
   log: {
     level: process.env.LOG_LEVEL,
+    dir: process.env.LOG_DIR,
     loggly_token: process.env.LOG_LOGGLY_TOKEN,
     loggly_subdomain: process.env.LOG_LOGGLY_SUBDOMAIN
   },
