@@ -3,46 +3,60 @@ const log = require('./log.js');
 const config = require('./config.js');
 const temperatureSensor = require('rasp2c/temperature');
 const temperatureDisplay = require('led-backpack/temperature');
+const _ = require('lodash');
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
 let lastGoodTemperature = temperatureSensor.getLastGoodTemperature();
 
-// Repeatedly call the logging function.
-const logTemperature = () => {
-  temperatureSensor.readTemperature(config.device1.path)
-    .then(celsius => {
-      log.debug(`Read temperature of ${celsius}°C from ${config.device1.path}.`);
+// Log a temperature result.
+const logTemperature = (celsius, location) => {
+  // If reading is very different from the last "good" temperature from the
+  // sensor, then ignore it.
+  if (lastGoodTemperature !== null && Math.abs(celsius - lastGoodTemperature) > 15) {
+    log.error(
+      `Got a weird reading (${celsius}°C is very different from the ` +
+      `last good reading ${lastGoodTemperature}°C) - ignoring.`
+    );
+    return;
+  }
 
-      // If reading is very different from the last "good" temperature from the
-      // sensor, then ignore it.
-      if (lastGoodTemperature !== null && Math.abs(celsius - lastGoodTemperature) > 15) {
-        log.error(
-          `Got a weird reading (${celsius}°C is very different from the ` +
-          `last good reading ${lastGoodTemperature}°C) - ignoring.`
-        );
-        return;
-      }
+  lastGoodTemperature = celsius;
 
-      lastGoodTemperature = celsius;
-      temperatureDisplay.displayTemperature(celsius);
-
-      db.insertTemperature(celsius, config.device1.location)
-        .then(() => {
-          log.info(`Recorded ${celsius}°C for ${config.device1.location}.`);
-        })
-        .catch(err => {
-          log.error(`Error inserting record: ${err} ${err.stack}`);
-        });
+  db.insertTemperature(celsius, location)
+    .then(() => {
+      log.info(`Recorded ${celsius}°C for ${location}.`);
     })
     .catch(err => {
-      log.error('Unable to get a good temperature reading.')
-      log.error(err.stack);
-      return;
+      log.error(`Error inserting record: ${err} ${err.stack}`);
     });
-};
+}
+
+// Read from all temperature sensors and log the results.
+const logTemperatures = () => {
+  config.devices.forEach((device, idx) => {
+    temperatureSensor.readTemperature(device.path)
+      .then(celsius => {
+        log.debug(`Read temperature of ${celsius}°C for ${device.location}.`);
+        logTemperature(celsius, device.location)
+
+        // Display the first temperature reading.
+        // TODO Cycle all readings.
+        if (idx === 0) {
+          temperatureDisplay.displayTemperature(celsius);
+        }
+      })
+      .catch(err => {
+        log.error('Unable to get a good temperature reading.')
+        log.error(err.stack);
+        return;
+      });
+  });
+}
 
 log.info(`Server is logging to database ${config.database.name} every ${config.logIntervalMilliseconds}ms.`);
+log.info(`Logging temperatures in: ${_.map(config.devices, 'location').join(', ')}.`);
 
-temperatureDisplay.init();
-logTemperature();
-setInterval(logTemperature, config.logIntervalMilliseconds);
+temperatureDisplay.init(() => {
+  logTemperatures();
+  setInterval(logTemperatures, config.logIntervalMilliseconds);
+});
