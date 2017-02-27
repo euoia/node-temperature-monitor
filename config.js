@@ -1,11 +1,6 @@
 'use strict';
 const fs = require('fs-sync');
-
-if (fs.exists('.env') === false) {
-  /* eslint no-console: 0 */
-  console.log('> cp .env.example .env');
-  fs.copy('.env.example', '.env');
-}
+const _ = require('lodash');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -23,8 +18,7 @@ module.exports = {
     loggly_token: process.env.LOG_LOGGLY_TOKEN,
     loggly_subdomain: process.env.LOG_LOGGLY_SUBDOMAIN
   },
-  device1: {
-    path: process.env.DEVICE1_PATH,
-    location: process.env.DEVICE1_LOCATION
-  }
+  // devices are listed as path, value pairs. We convert to an array of objects.
+  devices: _.chunk(process.env.DEVICES.split(' '), 2)
+    .map(values => {return {path: values[0], location: values[1]}})
 }
