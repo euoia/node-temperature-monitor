@@ -1,78 +1,62 @@
-var temp = require('node-rasp2c-temp/temp'),
-	express = require('express'),
-	routes = require('./routes'),
-	db = require('./db.js');
-
-// Log interval in milliseconds.
-var logIntervalMilliseconds = 30 * 1000;
-
-var app = express();
-app.configure(function () {
-	"use strict";
-
-	app.set('port', process.env.PORT || 3000);
-	app.set('views', __dirname + '/views');
-	app.set('view engine', 'ejs');
-	app.use(express.favicon());
-	app.use(express.logger('dev'));
-	app.use(express.bodyParser());
-	app.use(express.methodOverride());
-	app.use(express.static('static'));
-});
+const db = require('./db.js');
+const log = require('./log.js');
+const config = require('./config.js');
+const temperatureSensor = require('rasp2c/temperature');
+const temperatureDisplay = require('led-backpack/temperature');
+const _ = require('lodash');
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
-var lastGoodTemp = null;
+let lastGoodTemperature = temperatureSensor.getLastGoodTemperature();
 
-// Repeatedly call the logging function.
-setInterval(function logTemperature() {
-	"use strict";
+// Log a temperature result.
+const logTemperature = (celsius, location) => {
+  // If reading is very different from the last "good" temperature from the
+  // sensor, then ignore it.
+  if (lastGoodTemperature !== null && Math.abs(celsius - lastGoodTemperature) > 15) {
+    log.error(
+      `Got a weird reading (${celsius}°C is very different from the ` +
+      `last good reading ${lastGoodTemperature}°C) - ignoring.`
+    );
+    return;
+  }
 
-	console.log('Inserting last good temperature reading into database.');
+  lastGoodTemperature = celsius;
 
-	var celsius = temp.getLastGoodTemp();
-	if (celsius === null) {
-		console.error('Even the last good temp was bad! Not inserting anything.');
-		return;
-	}
+  db.insertTemperature(celsius, location)
+    .then(() => {
+      log.info(`Recorded ${celsius}°C for ${location}.`);
+    })
+    .catch(err => {
+      log.error(`Error inserting record: ${err} ${err.stack}`);
+    });
+}
 
-	// If reading is very different from the last "good" temperature from the sensor, then ignore it.
-	// TODO: Implement this properly:
-	//	* A very different reading from the last one should be ignored.
-	//	* Make the range configurable.
-	//	* If the temperature ever jumps by more than +10 or -10 in one reading,
-	//	  this version will break because all subsequent readings will be
-	//	  discarded.
-	if (lastGoodTemp !== null && (celsius > lastGoodTemp + 15 || celsius < lastGoodTemp - 15)) {
-		console.error('Probably a weird reading (' + celsius + 'C) - very different from the last good one (' + lastGoodTemp + 'C), ignoring.');
-		return;
-	}
+// Read from all temperature sensors and log the results.
+const logTemperatures = () => {
+  config.devices.forEach((device, idx) => {
+    temperatureSensor.readTemperature(device.path)
+      .then(celsius => {
+        log.debug(`Read temperature of ${celsius}°C for ${device.location}.`);
+        logTemperature(celsius, device.location)
 
-	lastGoodTemp = celsius;
+        // Display the first temperature reading.
+        // TODO Cycle all readings.
+        if (idx === 0) {
+          temperatureDisplay.displayTemperature(celsius);
+        }
+      })
+      .catch(err => {
+        log.error('Unable to get a good temperature reading.')
+        log.error(err.stack);
+        return;
+      });
+  });
+}
 
-	var record = {
-		unix_time: Date.now(),
-		celsius: celsius
-	};
+log.info(`Server is logging to database ${config.database.name} every ${config.logIntervalMilliseconds}ms.`);
+log.info(`Logging temperatures in: ${_.map(config.devices, 'location').join(', ')}.`);
 
-	db.insertTemp(record, function (error) {
-		if (error) {
-			console.error('Error inserting into database.');
-			console.error(error);
-		}
-	});
-
-}, logIntervalMilliseconds);
-
-console.log('Server is logging to database at ' + logIntervalMilliseconds + 'ms intervals');
-
-app.get('/json/temperature_query', routes.temperature_query);
-app.get('/json/temperature_now', routes.temperature_now(temp));
-
-app.get('/', routes.index);
-
-app.get('/temperature_log', routes.temperature_log);
-app.get('/temperature_plot', routes.temperature_plot);
-
-app.listen(app.get('port'), function () {
-	console.log("Express server started on port %d.", app.get('port'));
+temperatureDisplay.init(() => {
+  logTemperatures();
+  setInterval(logTemperatures, config.logIntervalMilliseconds);
 });
