@@ -1,4 +1,4 @@
-'use strict';
+/* Application configuation (can be loaded from .env) */
 const _ = require('lodash');
 
 // Load environment variables with the -r option, e.g.

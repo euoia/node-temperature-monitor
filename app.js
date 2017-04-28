@@ -1,8 +1,8 @@
+/* Application */
 const db = require('./db.js');
 const log = require('./log.js');
 const config = require('./config.js');
 const temperatureSensor = require('rasp2c/temperature');
-const temperatureDisplay = require('led-backpack/temperature');
 const _ = require('lodash');
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
@@ -33,17 +33,11 @@ const logTemperature = (celsius, location) => {
 
 // Read from all temperature sensors and log the results.
 const logTemperatures = () => {
-  config.devices.forEach((device, idx) => {
+  config.devices.forEach((device) => {
     temperatureSensor.readTemperature(device.path)
       .then(celsius => {
         log.debug(`Read temperature of ${celsius}°C for ${device.location}.`);
         logTemperature(celsius, device.location)
-
-        // Display the first temperature reading.
-        // TODO Cycle all readings.
-        if (idx === 0) {
-          temperatureDisplay.displayTemperature(celsius);
-        }
       })
       .catch(err => {
         log.error('Unable to get a good temperature reading.')
@@ -56,7 +50,5 @@ const logTemperatures = () => {
 log.info(`Server is logging to database ${config.database.name} every ${config.logIntervalMilliseconds}ms.`);
 log.info(`Logging temperatures in: ${_.map(config.devices, 'location').join(', ')}.`);
 
-temperatureDisplay.init(() => {
-  logTemperatures();
-  setInterval(logTemperatures, config.logIntervalMilliseconds);
-});
+logTemperatures();
+setInterval(logTemperatures, config.logIntervalMilliseconds);

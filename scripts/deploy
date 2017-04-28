@@ -8,7 +8,7 @@ npm run build
 echo "Deploying..."
 
 # Config -----------------
-REMOTE_BASE="/home/pi/temperature-monitor"
+REMOTE_BASE="/home/pi/temperature-logger"
 REMOTE_SERVER="pubpi"
 
 # Script  ----------------

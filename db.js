@@ -1,3 +1,4 @@
+/* Database */
 const Influx = require('influx');
 const log = require('./log.js');
 const config = require('./config.js');

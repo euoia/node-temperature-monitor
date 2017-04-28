@@ -1,4 +1,4 @@
-'use strict';
+/* Application logging. */
 const config = require('./config.js');
 const winston = require('winston');
 
@@ -43,6 +43,6 @@ const logglyConfig = {
 };
 
 logger.add(winston.transports.Loggly, logglyConfig);
-logger.add(winston.transports.File, {filename: config.log.dir + `/temperature-monitor.log`});
+logger.add(winston.transports.File, {filename: config.log.dir + `/temperature-display.log`});
 
 module.exports = logger;
