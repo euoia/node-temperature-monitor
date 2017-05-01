@@ -16,3 +16,11 @@ configured as `DEVICES`.
 
 This program is intended to run on a Raspberry Pi, but may work in other
 environments.
+
+## Start on boot (systemd)
+
+`
+sudo cp scripts/temperature-logger.service /lib/systemd/system
+sudo systemctl enable temperature-logger.service
+sudo systemctl start temperature-logger.service
+`
