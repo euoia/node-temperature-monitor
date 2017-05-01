@@ -2,7 +2,7 @@
 const db = require('./db.js');
 const log = require('./log.js');
 const config = require('./config.js');
-const temperatureSensor = require('rasp2c/temperature');
+const temperatureSensor = require('@euoia/rasp2c/temperature');
 const _ = require('lodash');
 
 // Record the previous reading, to detect wild fluctuations, which are probably errors.
