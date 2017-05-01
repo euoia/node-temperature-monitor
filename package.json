@@ -1,6 +1,6 @@
 {
-  "name": "temperature-logger",
-  "version": "3.0.0",
+  "name": "@euoia/temperature-logger",
+  "version": "3.0.1",
   "description": "Log temperatures from DS18B20 temperature sensors connected via GPIO to InfluxDB.",
   "main": "app.js",
   "scripts": {
