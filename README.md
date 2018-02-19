@@ -19,8 +19,8 @@ environments.
 
 ## Start on boot (systemd)
 
-`
+```
 sudo cp scripts/temperature-logger.service /lib/systemd/system
 sudo systemctl enable temperature-logger.service
 sudo systemctl start temperature-logger.service
-`
+```
